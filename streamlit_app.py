@@ -1,220 +1,126 @@
 import streamlit as st
-import random
+from supabase import create_client, Client
 
-# アプリの設定
+# アプリの基本設定
 st.set_page_config(page_title="J-Rock & Punk Quiz Master", page_icon="🎸")
 
-# 問題データ (20問)
-# 難易度高め：バンドの旧名、結成の経緯、サポートメンバー、あまり知られていない記録など
-if "quiz_data" not in st.session_state:
-    st.session_state.quiz_data = [
-        {
-            "id": 1,
-            "question": "1997年結成のHi-STANDARDが主宰し、日本のメロコアブームを決定づけた伝説的フェスの名前は？",
-            "options": ["AIR JAM", "SATANIC ENT.", "PUNKSPRING", "ROCK IN JAPAN"],
-            "answer": "AIR JAM",
-            "explanation": "1997年にスタートしたAIR JAMは、パンクとストリートカルチャーを融合させ、ハイスタを中心に日本のメロコアシーンを爆発させました。"
-        },
-        {
-            "id": 2,
-            "question": "ELLEGARDENが2008年の活動休止前に最後にリリースしたシングルのタイトルは？",
-            "options": ["Space Sonic", "Salamander", "高架下", "Fire Cracker"],
-            "answer": "高架下",
-            "explanation": "2008年リリースの『高架下』が休止前最後のシングル。2018年の復活まで、ファンにとっては特別な1曲となりました。"
-        },
-        {
-            "id": 3,
-            "question": "10-FEETの地元である京都で毎年開催される「京都大作戦」。2007年の第1回が中止になった理由は？",
-            "options": ["チケットの売れ残り", "台風の直撃", "会場のダブルブッキング", "メンバーの怪我"],
-            "answer": "台風の直撃",
-            "explanation": "記念すべき第1回は台風のため中止に。その悔しさをバネに翌年開催され、現在は日本屈指の人気フェスとなりました。"
-        },
-        {
-            "id": 4,
-            "question": "マキシマム ザ ホルモンの楽曲『F』は、ある漫画のキャラクターに捧げられた曲ですが、それは誰？",
-            "options": ["フリーザ", "フェニックス一輝", "範馬勇次郎", "不動明"],
-            "answer": "フリーザ",
-            "explanation": "ドラゴンボールのフリーザをテーマにした曲。これがきっかけで映画『ドラゴンボールZ 復活の「F」』の劇中歌に採用されました。"
-        },
-        {
-            "id": 5,
-            "question": "WANIMAがメジャーデビュー前に所属していた、Hi-STANDARDの難波章浩が設立したレーベルは？",
-            "options": ["PIZZA OF DEATH", "CATCH ALL RECORDS", "STEP UP RECORDS", "TRUST RECORDS"],
-            "answer": "PIZZA OF DEATH",
-            "explanation": "PIZZA OF DEATH所属として初の熊本出身バンド。2014年の『Can Not Enjoy?』でシーンに衝撃を与えました。"
-        },
-        {
-            "id": 6,
-            "question": "2000年代に「青春パンク」ブームを巻き起こしたMONGOL800。アルバム『MESSAGE』の累計売上枚数は約何万枚？",
-            "options": ["100万枚", "150万枚", "280万枚", "400万枚"],
-            "answer": "280万枚",
-            "explanation": "インディーズとしては異例の280万枚以上を記録。日本の音楽史上、最も売れたインディーズアルバムです。"
-        },
-        {
-            "id": 7,
-            "question": "ASIAN KUNG-FU GENERATIONの後藤正文が、震災後に設立した「新しい音楽の賞」の名前は？",
-            "options": ["APPLE VINEGAR MUSIC AWARD", "ORANGE PEEL AWARD", "CD SHOP AWARD", "NANO-MUGEN AWARD"],
-            "answer": "APPLE VINEGAR MUSIC AWARD",
-            "explanation": "新進気鋭のミュージシャンを支援するために後藤氏が私財を投じて設立した、文学賞のような音楽賞です。"
-        },
-        {
-            "id": 8,
-            "question": "NUMBER GIRLが2019年に再結成した際、最初のライブを行ったフェスは？",
-            "options": ["FUJI ROCK FESTIVAL", "RISING SUN ROCK FESTIVAL", "SUMMER SONIC", "VIVA LA ROCK"],
-            "answer": "RISING SUN ROCK FESTIVAL",
-            "explanation": "RISING SUNで復活予定でしたが、初日が台風で中止になったため、急遽YouTube生配信でのライブとなりました。"
-        },
-        {
-            "id": 9,
-            "question": "THE BLUE HEARTSの解散後、真島昌利と甲本ヒロトが最初に結成したバンドは？",
-            "options": ["ザ・クロマニヨンズ", "ザ・ハイロウズ", "↑THE HIGH-LOWS↓", "ましまろ"],
-            "answer": "↑THE HIGH-LOWS↓",
-            "explanation": "1995年に結成。正式表記は矢印が含まれる『↑THE HIGH-LOWS↓』です。"
-        },
-        {
-            "id": 10,
-            "question": "SiMの主催フェス「DEAD POP FESTIVAL」。そのコンセプトとして掲げられている言葉は？",
-            "options": ["壁を壊す", "ライブハウスの逆襲", "ロックの復権", "最狂の遊び場"],
-            "answer": "壁を壊す",
-            "explanation": "「ライブハウスでしか見られないバンドを野外フェスに連れていく」「壁を壊す」を合言葉に開催されています。"
-        },
-        # ... 以下、20問まで同様の形式で追加可能
-        {
-            "id": 11,
-            "question": "BRAHMANのボーカルTOSHI-LOWの愛称であり、その圧倒的な存在感から呼ばれる異名は？",
-            "options": ["鬼", "龍", "虎", "鳳凰"],
-            "answer": "鬼",
-            "explanation": "ステージでの迫力や後輩への厳しさ（と愛）から「鬼」と呼ばれ、多くのファンとアーティストに親しまれています。"
-        },
-        {
-            "id": 12,
-            "question": "04 Limited SazabysのGENが、名古屋で毎年開催している主催フェスの名前は？",
-            "options": ["TREASURE05X", "YON FES", "MERRY ROCK PARADE", "FREEDOM NAGOYA"],
-            "answer": "YON FES",
-            "explanation": "愛知県のモリコロパークで開催される「YON FES」。フォーリミが地元のシーンを盛り上げるべくスタートさせました。"
-        },
-        {
-            "id": 13,
-            "question": "MAN WITH A MISSIONの「ジャン・ケン・ジョニー」の役割は？",
-            "options": ["ボーカル・ギター", "ベース・コーラス", "ドラム", "DJ・サンプリング"],
-            "answer": "ボーカル・ギター",
-            "explanation": "ジャン・ケン・ジョニーはギター・ボーカル・ラップを担当。唯一しゃべることができる設定でもあります。"
-        },
-        {
-            "id": 14,
-            "question": "BUMP OF CHICKENのメンバー全員の共通点は？",
-            "options": ["同じ幼稚園出身", "同じ大学の軽音部", "バイト先の同僚", "同じ中学の同級生"],
-            "answer": "同じ幼稚園出身",
-            "explanation": "正確には「全員が同じ幼稚園出身」という非常に珍しい幼馴染バンドとして知られています。"
-        },
-        {
-            "id": 15,
-            "question": "King Gnuの楽曲『Vinyl』が収録されている、改名前のバンド名「Srv.Vinci」名義の要素も含む1stアルバムは？",
-            "options": ["Tokyo Rendez-Vous", "Sympa", "CEREMONY", "THE GREATEST UNKNOWN"],
-            "answer": "Tokyo Rendez-Vous",
-            "explanation": "2017年リリースの1stアルバム。この頃から圧倒的なミクスチャー感覚を発揮していました。"
-        },
-        {
-            "id": 16,
-            "question": "ROTTENGRAFFTYの出身地であり、彼らの聖地とされるライブハウスがある場所は？",
-            "options": ["大阪・心斎橋", "京都・響都", "兵庫・神戸", "滋賀・大津"],
-            "answer": "京都・響都",
-            "explanation": "彼らは京都を「響都」と呼び、地元への強い愛を楽曲やライブで表現し続けています。"
-        },
-        {
-            "id": 17,
-            "question": "クリープハイプの尾崎世界観が、名前の由来となった観客からの言葉は？",
-            "options": ["世界観がすごい", "声が特徴的", "歌詞がエロい", "ライブが短い"],
-            "answer": "世界観がすごい",
-            "explanation": "ライブ後に「世界観がすごいですね」と言われたことに対して「世界観って何だよ」と反発したことが由来と言われています。"
-        },
-        {
-            "id": 18,
-            "question": "My Hair is Badの「椎木知仁」がライブ中によく行う、即興で言葉を乗せる手法を何と呼ぶ？",
-            "options": ["フリースタイルラップ", "ポエトリーリーディング", "弾き語り語り", "語り（MC）"],
-            "answer": "語り（MC）",
-            "explanation": "演奏中に激しく感情を吐き出す「語り」スタイルはマイヘアの代名詞。即興性が非常に高いのが特徴です。"
-        },
-        {
-            "id": 19,
-            "question": "SUPER BEAVERが一度メジャー契約を打ち切られ、インディーズで活動した期間は約何年？",
-            "options": ["2年", "5年", "10年", "12年"],
-            "answer": "10年",
-            "explanation": "2010年に一度メジャーを離れ、2020年に再びメジャー契約を結ぶという、異例の「再メジャーデビュー」を果たしました。"
-        },
-        {
-            "id": 20,
-            "question": "2024年に結成20周年を迎え、幕張メッセでのワンマンを成功させた、菅原卓郎がボーカルのバンドは？",
-            "options": ["THE BACK HORN", "9mm Parabellum Bullet", "UNISON SQUARE GARDEN", "STRAIGHTENER"],
-            "answer": "9mm Parabellum Bullet",
-            "explanation": "2024年で結成20周年。歌謡曲的なメロディと激しいパンク・メタルサウンドの融合が唯一無二のバンドです。"
-        }
-    ]
+# --- 1. Supabase接続設定 ---
+# Streamlit CloudのSecretsに設定したURLとKEYを読み込みます
+@st.cache_resource
+def init_connection():
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
+    except Exception as e:
+        st.error("Secretsの設定が見つかりません。Streamlit CloudのSettingsを確認してください。")
+        return None
 
-# セッション状態の初期化
+supabase = init_connection()
+
+# --- 2. データの読み込み ---
+@st.cache_data(ttl=600) # 10分間キャッシュを保持
+def fetch_quiz_data():
+    if supabase:
+        try:
+            # quiz_questionsテーブルから全データを取得
+            response = supabase.table("quiz_questions").select("*").order("id").execute()
+            return response.data
+        except Exception as e:
+            st.error(f"データ取得エラー: {e}")
+            return []
+    return []
+
+quiz_data = fetch_quiz_data()
+
+# --- 3. セッション状態（一時保存データ）の初期化 ---
 if "current_q" not in st.session_state:
-    st.session_state.current_q = 0
+    st.session_state.current_q = 0
 if "score" not in st.session_state:
-    st.session_state.score = 0
+    st.session_state.score = 0
 if "answered" not in st.session_state:
-    st.session_state.answered = False
-if "user_choice" not in st.session_state:
-    st.session_state.user_choice = None
+    st.session_state.answered = False
 
-# タイトル表示
-st.title("🎸 邦楽ロック・パンク・メロコア クイズ")
-st.write("1995年〜2025年の名曲・伝説を振り返る、難易度高めの4択クイズです。")
+# --- 4. クイズ画面の構成 ---
+st.title("🎸 邦楽ロック・パンク クイズ")
+st.caption("Supabase連携版 - データの永続化を実現")
 
-# クイズ終了後の表示
-if st.session_state.current_q >= len(st.session_state.quiz_data):
-    st.balloons()
-    st.header("全問終了！")
-    st.metric("最終スコア", f"{st.session_state.score} / {len(st.session_state.quiz_data)}")
-    
-    if st.button("もう一度挑戦する"):
-        st.session_state.current_q = 0
-        st.session_state.score = 0
-        st.session_state.answered = False
-        st.rerun()
+# データが空の場合の警告
+if not quiz_data:
+    st.warning("現在クイズデータがありません。SupabaseのテーブルにデータをInsertしてください。")
+    st.info("SQL Editorでデータを追加すると、ここに問題が表示されます。")
+
+# 全問解き終わった後の処理
+elif st.session_state.current_q >= len(quiz_data):
+    st.balloons()
+    st.header("🎉 全問終了！")
+    final_score = st.session_state.score
+    total = len(quiz_data)
+    
+    col1, col2 = st.columns(2)
+    col1.metric("あなたの正解数", f"{final_score} / {total}")
+    col2.metric("正解率", f"{(final_score/total)*100:.1f}%")
+
+    st.divider()
+    
+    # --- スコア記録機能 ---
+    st.subheader("ランキングに記録する")
+    user_name = st.text_input("ニックネームを入力してください", "名無しさん")
+    
+    if st.button("スコアをSupabaseに保存してリセット"):
+        try:
+            # quiz_scoresテーブルにデータを挿入
+            supabase.table("quiz_scores").insert({
+                "username": user_name,
+                "score": final_score,
+                "total_questions": total
+            }).execute()
+            st.success(f"{user_name}さんのスコアを保存しました！")
+        except Exception as e:
+            st.error(f"スコア保存失敗: {e}")
+        
+        # セッションをリセットして最初に戻る
+        st.session_state.current_q = 0
+        st.session_state.score = 0
+        st.session_state.answered = False
+        st.rerun()
+
+# クイズ進行中の表示
 else:
-    # 現在の問題を取得
-    q = st.session_state.quiz_data[st.session_state.current_q]
-    
-    st.subheader(f"第 {st.session_state.current_q + 1} 問")
-    st.markdown(f"### {q['question']}")
-    
-    # 選択肢の表示
-    choice = st.radio("答えを選んでください：", q['options'], index=None, key=f"q_{st.session_state.current_q}")
+    q = quiz_data[st.session_state.current_q]
+    
+    st.subheader(f"第 {st.session_state.current_q + 1} 問")
+    st.markdown(f"### {q['question']}")
+    
+    # 選択肢ボタン（Supabaseの配列データをそのまま利用）
+    choice = st.radio("答えを選んでください：", q['options'], index=None, key=f"q_{q['id']}")
 
-    if not st.session_state.answered:
-        if st.button("回答を確定する"):
-            if choice:
-                st.session_state.answered = True
-                st.session_state.user_choice = choice
-                if choice == q['answer']:
-                    st.session_state.score += 1
-                st.rerun()
-            else:
-                st.warning("選択肢を選んでください。")
-    else:
-        # 回答後のフィードバック
-        if st.session_state.user_choice == q['answer']:
-            st.success(f"正解！ ✅ (現在のスコア: {st.session_state.score})")
-        else:
-            st.error(f"残念！ ❌ 正解は「{q['answer']}」でした。")
-        
-        with st.expander("📝 解説を見る", expanded=True):
-            st.write(q['explanation'])
-        
-        if st.button("次の問題へ"):
-            st.session_state.current_q += 1
-            st.session_state.answered = False
-            st.session_state.user_choice = None
-            st.rerun()
+    if not st.session_state.answered:
+        if st.button("回答を確定する"):
+            if choice:
+                st.session_state.answered = True
+                if choice == q['answer']:
+                    st.session_state.score += 1
+                    st.success("正解！ ✅")
+                else:
+                    st.error(f"残念！ ❌ 正解は「{q['answer']}」でした。")
+                st.rerun()
+            else:
+                st.warning("選択肢を選んでください。")
+    else:
+        # 解説の表示
+        with st.expander("📝 解説を見る", expanded=True):
+            st.write(q['explanation'])
+        
+        if st.button("次の問題へ"):
+            st.session_state.current_q += 1
+            st.session_state.answered = False
+            st.rerun()
 
-# サイドバーに進行状況を表示
-st.sidebar.title("進行状況")
-progress = st.session_state.current_q / len(st.session_state.quiz_data)
-st.sidebar.progress(progress)
-st.sidebar.write(f"問題: {st.session_state.current_q} / {len(st.session_state.quiz_data)}")
-st.sidebar.write(f"スコア: {st.session_state.score}")                                                                                 supabaseとつながるコードに変更して
+# --- 5. サイドバー（進行状況） ---
+st.sidebar.title("🎮 Status")
+if quiz_data:
+    progress_val = st.session_state.current_q / len(quiz_data)
+    st.sidebar.progress(progress_val)
+    st.sidebar.write(f"進行度: {st.session_state.current_q} / {len(quiz_data)}")
+    st.sidebar.write(f"現在のスコア: {st.session_state.score}")
